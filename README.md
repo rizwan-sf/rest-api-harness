@@ -1,4 +1,4 @@
-# ts-rest-harness
+# sf-harness
 
 An **agent harness** — not an agent — whose only job is to govern TypeScript REST API work.
 

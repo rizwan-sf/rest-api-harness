@@ -11,7 +11,7 @@ import { PROVIDER_IDS } from "./providers/types.js";
 import { loadTask } from "./task/load.js";
 import { TaskSchema } from "./task/schema.js";
 
-const USAGE = `ts-rest-harness — governs TypeScript REST API work by AI agents
+const USAGE = `sf-harness — governs TypeScript REST API work by AI agents
 
 Usage:
   harness run <task.yaml> --provider <anthropic|openai> [--model <id>]
