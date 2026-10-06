@@ -1,0 +1,45 @@
+id: greenfield-todos
+kind: greenfield
+title: Build a Todos REST API
+template: ../templates/greenfield
+prompt: |
+  Build a Todos API from the scaffold.
+
+  Resource: todo { id: string, title: string (1-200 chars), completed: boolean, createdAt: ISO string }
+  Endpoints (all under /v1):
+    - GET    /v1/todos         list, paginated with ?limit (1-100, default 20) & ?offset (>= 0, default 0)
+                               response: { data: Todo[], page: { limit, offset, total } }
+    - POST   /v1/todos         create from { title, completed? } → 201 + Location + { data: Todo }
+    - GET    /v1/todos/:todoId fetch one → { data: Todo }
+    - PATCH  /v1/todos/:todoId partial update of title/completed → { data: Todo }
+    - DELETE /v1/todos/:todoId → 204, no body
+
+  Ids are opaque strings: an unknown id is a 404 problem, never a 422.
+  Validate request bodies before looking up the resource.
+  Use an in-memory store created inside createApp() so every app instance is isolated.
+  Write vitest + supertest tests covering the happy paths and the error cases.
+budget:
+  maxTurns: 60
+  maxOutputTokens: 400000
+  maxFinishAttempts: 5
+acceptance:
+  requireTests: true
+  probes:
+    - name: create todo
+      request: { method: POST, path: /v1/todos, body: { title: "Write the harness" } }
+      expect: { status: 201, bodyHas: [data.id, data.completed], headers: { location: /v1/todos/ } }
+    - name: create todo with invalid body
+      request: { method: POST, path: /v1/todos, body: { title: "" } }
+      expect: { status: 422, problem: true }
+    - name: list todos
+      request: { method: GET, path: "/v1/todos?limit=10" }
+      expect: { status: 200, bodyHas: [data, page.limit, page.total] }
+    - name: list todos with invalid limit
+      request: { method: GET, path: "/v1/todos?limit=1000" }
+      expect: { status: 422, problem: true }
+    - name: fetch missing todo
+      request: { method: GET, path: /v1/todos/does-not-exist }
+      expect: { status: 404, problem: true }
+    - name: patch with wrong type
+      request: { method: PATCH, path: /v1/todos/does-not-exist, body: { completed: "yes" } }
+      expect: { status: 422, problem: true }

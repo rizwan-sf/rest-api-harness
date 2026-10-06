@@ -1,0 +1,46 @@
+id: brownfield-users
+kind: brownfield
+title: Paginate users and add partial updates
+fixture: ../fixtures/brownfield-users
+prompt: |
+  This is an existing users service. Extend it without breaking current behaviour or tests.
+
+  1. Paginate GET /v1/users with ?limit (1-100, default 20) and ?offset (>= 0, default 0).
+     Response: { data: User[], page: { limit, offset, total } }.
+  2. Add PATCH /v1/users/:id for partial updates of `name` and/or `email`.
+     At least one field is required. Unknown user → 404 problem. Invalid input → 422 problem.
+  3. Add tests for both changes.
+
+  The codebase has legacy endpoints that pre-date the API standards. You do not have to fix
+  them, but you must not add new violations, and anything you touch must meet the standards.
+policy:
+  baseline: ratchet
+  protectedPaths: [test/users.test.ts]
+budget:
+  maxTurns: 50
+  maxOutputTokens: 300000
+  maxFinishAttempts: 5
+acceptance:
+  requireTests: true
+  probes:
+    - name: create user
+      request: { method: POST, path: /v1/users, body: { email: "ada@example.com", name: "Ada" } }
+      expect: { status: 201, bodyHas: [data.id], headers: { location: /v1/users/1 } }
+    - name: list users paginated
+      request: { method: GET, path: "/v1/users?limit=1&offset=0" }
+      expect: { status: 200, bodyHas: [data, page.limit, page.offset, page.total] }
+    - name: list users with invalid limit
+      request: { method: GET, path: "/v1/users?limit=0" }
+      expect: { status: 422, problem: true }
+    - name: patch user name
+      request: { method: PATCH, path: /v1/users/1, body: { name: "Ada Lovelace" } }
+      expect: { status: 200, bodyHas: [data.name] }
+    - name: patch user with invalid email
+      request: { method: PATCH, path: /v1/users/1, body: { email: "nope" } }
+      expect: { status: 422, problem: true }
+    - name: patch with empty body
+      request: { method: PATCH, path: /v1/users/1, body: {} }
+      expect: { status: 422, problem: true }
+    - name: patch missing user
+      request: { method: PATCH, path: /v1/users/999, body: { name: "Nobody" } }
+      expect: { status: 404, problem: true }
