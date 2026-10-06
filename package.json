@@ -1,5 +1,5 @@
 {
-  "name": "sf-harness",
+  "name": "rest-api-harness",
   "version": "0.1.0",
   "description": "An agent harness that governs TypeScript REST API work (greenfield + brownfield) across model providers.",
   "type": "module",
